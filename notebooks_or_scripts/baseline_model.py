@@ -10,11 +10,12 @@ PROCESSED_PATH = "data/processed/BCIT601_starter_service_requests_dataset_clean.
 PREDICTIONS_PATH = "outputs/baseline_example_predictions.csv"
 MODEL_PATH = "model/model.joblib"
 VECTORISER_PATH = "model/vectoriser.joblib"
+REPORT_PATH = "outputs/baseline_evaluation.txt"
 
 if __name__ == "__main__":
     #Load the clean dataset
     df = pd.read_csv(PROCESSED_PATH)
-    # Seperate the request text from the correct categorys
+    # Seperates the request text from the correct categorys
     x = df["request_text"]
     y = df["category"]
 
@@ -57,6 +58,14 @@ if __name__ == "__main__":
 
     print("\nTest accuracy:", round(accuracy * 100, 2), "%")
     print("\nClassification report:", report, sep="\n")
+
+    # This saves the accuracy and classification report
+    Path(REPORT_PATH).parent.mkdir(parents=True, exist_ok=True)
+
+    report_text  = f"Test accuracy: {accuracy * 100:.2f}%\n\n{report}"
+    Path(REPORT_PATH).write_text(report_text, encoding="utf-8")
+
+    print("/nEvaluation report saved to:", REPORT_PATH)
 
     # Combines the text requests , correct categorys and predictions
     results = pd.DataFrame({
