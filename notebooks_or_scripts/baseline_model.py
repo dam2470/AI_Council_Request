@@ -65,7 +65,7 @@ if __name__ == "__main__":
     report_text  = f"Test accuracy: {accuracy * 100:.2f}%\n\n{report}"
     Path(REPORT_PATH).write_text(report_text, encoding="utf-8")
 
-    print("/nEvaluation report saved to:", REPORT_PATH)
+    print("\nEvaluation report saved to:", REPORT_PATH)
 
     # Combines the text requests , correct categorys and predictions
     results = pd.DataFrame({
