@@ -1,7 +1,8 @@
 import pandas as pd
+from pathlib import Path
 
 RAW_PATH = "data/raw/BCIT601_starter_service_requests_dataset.csv"
-PROCESSED_PATH = "data/processed/CIT601_starter_service_requests_dataset_clean.csv"
+PROCESSED_PATH = "data/processed/BCIT601_starter_service_requests_dataset_clean.csv"
 
 # load the data into the pandas DataFrame
 def load_data(path):
@@ -71,3 +72,9 @@ if __name__ == "__main__":
 
     print("\nAFTER CLEANING")
     inspect_data(clean_df)
+
+    Path(PROCESSED_PATH).parent.mkdir(parents=True,  exist_ok=True)
+
+    clean_df.to_csv(PROCESSED_PATH, index=False)
+
+    print("\nCleaned dataset saved to:", PROCESSED_PATH)
