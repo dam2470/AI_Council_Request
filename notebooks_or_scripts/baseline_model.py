@@ -11,6 +11,7 @@ PREDICTIONS_PATH = "outputs/baseline_example_predictions.csv"
 MODEL_PATH = "model/model.joblib"
 VECTORISER_PATH = "model/vectoriser.joblib"
 REPORT_PATH = "outputs/baseline_evaluation.txt"
+ERRORS_PATH = "outputs/baseline_incorrect_predictions.csv"
 
 if __name__ == "__main__":
     #Load the clean dataset
@@ -91,6 +92,23 @@ if __name__ == "__main__":
     
     print("\nExample predictions saved to:", PREDICTIONS_PATH)
 
+    # This finds test requests that were predicted incorrectly
+    mistakes = results[
+        results["true_category"] !=  results["predicted_category"]
+    ]
+
+    # Saves the incorrect predicts so they can be reviewed
+    mistakes.to_csv(ERRORS_PATH, index=False)
+
+    print("\nIncorrect predictions:", len(mistakes))
+
+    for _, row in mistakes.iterrows():
+        print("\nRequest:", row["request_text"])
+        print("Correct category:", row["true_category"])
+        print("Predicted category:", row["predicted_category"])
+
+    print("\nIncorrect predictions saved to:", ERRORS_PATH)  
+  
     # This saves the trained model and the fitted vectoriser
     Path(MODEL_PATH).parent.mkdir(parents=True, exist_ok=True)
 
