@@ -17,8 +17,6 @@ I am building a machine learning system to classify council service requests as 
 | Flask | Creating API routes and handling JSON requests and responses. |
 | pathlib | Managing file paths and creating folders; included with Python. |
 
-I use Visual Studio Code to edit and run the code, and Git/GitHub for version control.
-
 ## Main Files
 
 | File or folder | Purpose |
@@ -30,7 +28,6 @@ I use Visual Studio Code to edit and run the code, and Git/GitHub for version co
 | `outputs/` | Evaluation report, five example predictions and incorrect predictions. |
 | `api/app.py` | Flask API code. |
 
-The Word report contains my progress summary and ethical reflection.
 
 ## Running the Project
 
