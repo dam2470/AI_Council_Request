@@ -1,43 +1,84 @@
-from flask import Flask
-import joblib
+from contextlib import asynccontextmanager
 from pathlib import Path
-from flask import Flask, request
 
-# API  application created
-app = Flask(__name__)
+import joblib
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
-#find prject folder
+# Create the API application
+# Find the project folder
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Locaterhe saaved model and vectoriser
-MODEL_PATH = BASE_DIR / 'model' / 'model.joblib'
-VECTORISER_PATH = BASE_DIR / 'model' / 'vectoriser.joblib'
+# Locate the saved model and vectoriser
+MODEL_PATH = BASE_DIR / "model" / "stopword_model.joblib"
+VECTORISER_PATH = BASE_DIR / "model" / "stopword_vectoriser.joblib"
 
-# Loads model and vectoriser when api starts
-model = joblib.load(MODEL_PATH)
-vectoriser = joblib.load(VECTORISER_PATH)
+# Store the loaded model and vectoriser
+artefacts = {}
 
-# returns the categorys recognised by the trained model
-@app.route('/categories', methods=['GET'])
-def categories():
-    return {'categories': model.classes_.tolist()}
 
-# recieve and validatre service request
-@ app.route('/predict', methods=['POST'])
-def predict():
-    data = request.get_json(silent=True)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load both files when the API starts
+    artefacts["model"] = joblib.load(MODEL_PATH)
+    artefacts["vectoriser"] = joblib.load(VECTORISER_PATH)
 
-    # check if input is json object
-    if not isinstance(data, dict):
-        return {'error': 'Send valid JSON object.'}, 400
+    yield
 
-    text = data.get('request_text')
+    # Clear the stored objects when the API stops
+    artefacts.clear()
 
-    # reject missing, or non string or blank text
-    if not isinstance(text, str) or not text.strip():
-        return {'error': 'request_text must not be an empty string.'}, 400
+# Create the API application with startup and shutdown handling
+app = FastAPI(lifespan=lifespan)
 
-# Check if the API is running
-@app.route('/health', methods=['GET'])
+# Define the expected input for a prediction
+class PredictRequest(BaseModel):
+    request_text: str = Field(min_length=1, max_length=2000)
+
+
+# Check that the API is running
+@app.get("/health")
 def health():
-    return {'status': 'ok'}
+    return {"status": "ok"}
+
+
+# Return the categories recognised by the model
+@app.get("/categories")
+def get_categories():
+    categories = artefacts["model"].classes_.tolist()
+    return {"categories": categories}
+
+
+# Receive and validate a service request
+@app.post("/predict")
+def predict(request: PredictRequest):
+    text = request.request_text.strip()
+
+    if text == "":
+        raise HTTPException(
+            status_code=422,
+            detail="request_text must not be blank."
+        )
+
+        # Match the text cleaning used during training
+    cleaned_text = text.lower()
+    cleaned_text = " ".join(cleaned_text.split())
+
+    model = artefacts["model"]
+    vectoriser = artefacts["vectoriser"]
+
+    # Convert the cleaned text into numerical features
+    features = vectoriser.transform([cleaned_text])
+
+    # Calculate the category probabilities
+    probabilities = model.predict_proba(features)[0]
+    best_index = probabilities.argmax()
+
+    predicted_category = str(model.classes_[best_index])
+    confidence = round(float(probabilities[best_index]), 3)
+
+    return {
+        "request_text": request.request_text,
+        "predicted_category": predicted_category,
+        "confidence": confidence
+    }
