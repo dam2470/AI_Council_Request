@@ -1,73 +1,164 @@
 # Council Service Request Classifier
 
-**Kai Morgan | BCIT601 – Assignment 2 | Iteration 2**
+**Kai Morgan | BCIT601 - Assignment 2 | Iteration 3**
 
 ## Overview
 
-I am building a machine learning system to classify council service requests as **road, waste, water or safety**. So far, I have cleaned the provided dataset, trained and evaluated a baseline model, saved the results and started a Flask API.
+I am building a machine learning system to classify council service requests as **road, waste, water or safety**. In Iteration 3, I compared the baseline with a version that removes selected stop words and replaced Flask with FastAPI. The API now returns a predicted category and confidence score and validates incoming requests.
+
+Project repository: [AI_Council_Request](https://github.com/dam2470/AI_Council_Request).
 
 ## Tools Used
 
 | Tool | Purpose |
 | --- | --- |
-| Python | Programming language for the project. |
-| pandas | Loading, inspecting, cleaning and saving CSV data. |
-| scikit-learn | Splitting data, TF-IDF text features, Logistic Regression and evaluation. |
-| joblib | Saving and loading the trained model and fitted vectoriser. |
-| Flask | Creating API routes and handling JSON requests and responses. |
-| pathlib | Managing file paths and creating folders; included with Python. |
+| Python 3.13 | Programming language used during development. |
+| pandas | Loading, inspecting and cleaning the dataset. |
+| scikit-learn | TF-IDF features, Logistic Regression, training/test splitting and evaluation. |
+| joblib | Saving and loading the model and fitted vectoriser. |
+| FastAPI | API endpoints and interactive documentation. |
+| Pydantic | Validating request text. |
+| Uvicorn | Running the API locally. |
+| pathlib and contextlib | File paths and API startup/shutdown; included with Python. |
 
 ## Main Files
 
 | File or folder | Purpose |
 | --- | --- |
-| `data/raw/` and `data/processed/` | Original and cleaned datasets. |
-| `data_cleaning.py` | Checks the data and standardises text formatting. |
-| `baseline_model.py` | Trains, evaluates and saves the model and vectoriser. |
-| `model/` | Generated `model.joblib` and `vectoriser.joblib` files. |
-| `outputs/` | Evaluation report, five example predictions and incorrect predictions. |
-| `api/app.py` | Flask API code. |
-
+| `data/raw/` and `data/processed/` | Original and cleaned starter datasets. |
+| `notebooks_or_scripts/data_cleaning.py` | Checks the data, handles blank values and standardises text formatting. |
+| `notebooks_or_scripts/baseline_model.py` | Original Iteration 2 training and evaluation script. |
+| `notebooks_or_scripts/model_improvement.py` | Removes repeated request texts, compares two models and saves the selected model pair. |
+| `model/model.joblib` and `model/vectoriser.joblib` | Original Iteration 2 model pair. |
+| `model/stopword_model.joblib` and `model/stopword_vectoriser.joblib` | Selected model pair used by the API. |
+| `outputs/baseline_*` | Historical baseline report, example predictions and incorrect predictions. |
+| `outputs/model_improvement_evaluation.txt` | Saved Iteration 3 comparison results. |
+| `api/app.py` | FastAPI application and prediction code. |
+| `requirements.txt` | External Python dependencies and their recorded versions. |
 
 ## Running the Project
 
-Open a terminal in the main project folder and use the project's Python environment. Install the external packages:
+Open PowerShell in the project root, where this README and `requirements.txt` are stored. Run all commands below from this folder.
 
-```bash
-python -m pip install pandas scikit-learn joblib Flask
+### 1. Install dependencies
+
+```powershell
+python -m pip install -r requirements.txt
 ```
 
-Run the cleaning script, then the baseline script. If they are directly inside `notebooks_or_scripts/`, use:
+The versions in `requirements.txt` match my development environment. The saved model and vectoriser were created using scikit-learn 1.9.0.
 
-```bash
+### 2. Prepare the data and train the selected model
+
+The saved stop-word model pair is already included. To recreate it and the evaluation output, run:
+
+```powershell
 python notebooks_or_scripts/data_cleaning.py
+python notebooks_or_scripts/model_improvement.py | Tee-Object -FilePath outputs/model_improvement_evaluation.txt
+```
+
+The improvement script prints both evaluation reports and saves the selected model and vectoriser in `model/`. `Tee-Object` also saves the printed results in `outputs/model_improvement_evaluation.txt`.
+
+To reproduce the historical Iteration 2 baseline separately, run:
+
+```powershell
 python notebooks_or_scripts/baseline_model.py
 ```
 
-Adjust these script paths if needed, keeping the terminal in the main project folder. Training creates the two saved files in `model/`.
+This writes the original model pair and the `baseline_*` outputs.
 
-Start the API:
+### 3. Start the API
 
-```bash
-python -m flask --app api.app run
+```powershell
+python -m uvicorn api.app:app --reload
 ```
 
-Leave the terminal running and open the [health check](http://127.0.0.1:5000/health) or [category list](http://127.0.0.1:5000/categories).
+Leave the terminal running and open:
 
-## Baseline Results
+- [Interactive API documentation](http://127.0.0.1:8000/docs)
+- [Health check](http://127.0.0.1:8000/health)
+- [Category list](http://127.0.0.1:8000/categories)
 
-The dataset contains **80 records**, with 20 per category. Cleaning applies lowercase and whitespace normalisation; no rows were removed.
+The API loads `stopword_model.joblib` and `stopword_vectoriser.joblib` once at startup using `joblib.load`. It does not retrain inside the API. Press **Ctrl+C** to stop the server.
 
-I used a stratified **64/16 training/test split**, `random_state=42`, TF-IDF and Logistic Regression. The saved evaluation reports **87.5% accuracy — 14 of 16 predictions correct**.
+## Data and Model Results
 
-One waste request and one road request were incorrectly predicted as safety. The dataset has only 60 distinct request texts, and eight test texts also appear in training. This limits conclusions about performance on new requests.
+The provided synthetic dataset contains **80 records**, with 20 per category. Cleaning applies lowercase and whitespace normalisation, removes blank text or labels and checks exact duplicate rows. The current processed CSV still contains 80 records.
 
-## API Status
+The improvement script removes duplicate `request_text` values before splitting, leaving **60 unique requests**, with 15 per category. This happens in memory and does not overwrite the processed CSV. It prevents identical request texts from appearing in both training and testing.
 
-| Endpoint | Method | Current implementation |
+Both models use the same stratified **48/12 training/test split**, `random_state=42` and `LogisticRegression(max_iter=1000)`. Each TF-IDF vectoriser is fitted on training text only.
+
+The improvement tested was removing the fixed stop-word list **the, was, is, a and an**.
+
+| Model version | Accuracy | Correct predictions | Macro F1 |
+| --- | ---: | ---: | ---: |
+| Single-word TF-IDF baseline | 75.00% | 9/12 | 0.73 |
+| Single-word TF-IDF with stop-word removal | 83.33% | 10/12 | 0.83 |
+
+Stop-word removal improved accuracy by **8.33 percentage points** on this split, equivalent to one additional correct prediction. Road recall increased from 1/3 to 2/3. The full classification reports are saved in `outputs/model_improvement_evaluation.txt`.
+
+The original Iteration 2 baseline scored 87.5% on a different 64/16 split. Eight test texts also appeared in training. That result is retained as historical evidence and is not directly comparable with the Iteration 3 scores.
+
+## API Endpoints
+
+| Endpoint | Method | Response |
 | --- | --- | --- |
-| `/health` | GET | Returns `{"status": "ok"}`. |
-| `/categories` | GET | Returns the model's category labels. |
-| `/predict` | POST | Validates input; prediction is unfinished. |
+| `/health` | GET | `{"status": "ok"}` |
+| `/categories` | GET | `{"categories": ["road", "safety", "waste", "water"]}` |
+| `/predict` | POST | Original request text, predicted category and confidence score. |
 
-The API loads the saved model and vectoriser at startup. Currently, `/predict` has no response for valid input. My next step is to add preprocessing, prediction and confidence, then test valid and invalid requests.
+In `/docs`, expand **POST /predict**, select **Try it out**, enter the following JSON and select **Execute**:
+
+```json
+{
+  "request_text": "Large pothole"
+}
+```
+
+Recorded response:
+
+```json
+{
+  "request_text": "Large pothole",
+  "predicted_category": "road",
+  "confidence": 0.35
+}
+```
+
+Confidence is the highest category probability from `predict_proba()`, rounded to three decimal places. It is not a guarantee of correctness.
+
+The request must contain a string between 1 and 2,000 characters. Spaces-only text is rejected. Valid text is converted to lowercase and its whitespace is normalised before vectorisation.
+
+## Testing and Evidence
+
+I tested the endpoints manually through the interactive documentation. `/health` and `/categories` returned HTTP 200. The following prediction requests also returned HTTP 200:
+
+| Request text | Predicted category | Confidence |
+| --- | --- | ---: |
+| Large pothole | road | 0.350 |
+| Water leaking from a pipe | water | 0.504 |
+| Broken playground equipment | safety | 0.385 |
+| Rubbish dumped beside bins | waste | 0.445 |
+| Broken glass on the sidewalk | safety | 0.296 |
+
+Invalid requests were also tested:
+
+| Input | Recorded response |
+| --- | --- |
+| `{"request_text": ""}` | HTTP 422: text must contain at least one character. |
+| `{"request_text": "   "}` | HTTP 422: `request_text must not be blank.` |
+| `{}` | HTTP 422: required field missing. |
+| `{"request_text": 123}` | HTTP 422: input must be a string. |
+
+These tests check API behaviour. The model's 83.33% accuracy comes from the separate 12-request evaluation.
+
+Screenshots are stored in the **API Testing Evidence** folder supplied separately with the assessment, outside the code repository. They include prediction tests, endpoint tests, invalid-input tests and the model comparison.
+
+## Limitations and Responsible Use
+
+- The dataset is small and synthetic, so these results do not establish accuracy on real council requests.
+- The comparison uses one test split containing only 12 requests. The test results were inspected during development, so further independent evaluation is needed.
+- Some request types have limited training coverage. Both road requests about footpath damage landed in the test set, leaving no corresponding examples in the road training data.
+- Staff should review predictions, especially ambiguous requests or those with low confidence. Misclassification could delay the correct response.
+- Future use with real requests would need to protect personal information and consider Māori data sovereignty and responsible data use in Aotearoa New Zealand.
