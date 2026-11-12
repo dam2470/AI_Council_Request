@@ -8,7 +8,7 @@ PROCESSED_PATH = "data/processed/BCIT601_starter_service_requests_dataset_clean.
 def load_data(path):
     return pd.read_csv(path)
 
-# Check missing values, duplicate records and inconsistant text formatting
+# Check missing values, duplicate records and inconsistent text formatting
 def inspect_data(df):
     print("\nRows and Columns:", df.shape)
 
@@ -28,7 +28,7 @@ def inspect_data(df):
     for text in df["request_text"].head():
         print(text)
 
-#  convert to lower and remove white spaces
+# Standardise text and return an empty string for missing or non-text values
 
 def clean_text(text): 
     if not isinstance(text, str):
@@ -41,7 +41,7 @@ def clean_text(text):
 
 # Apply cleaning steps  to the dataset copy
 
-def  clean_data(df):
+def clean_data(df):
     df = df.copy()
 
     df["request_text"] = df["request_text"].apply(clean_text)
@@ -52,10 +52,12 @@ def  clean_data(df):
     print("Rows removed for missing or blank request text:", before - len(df))
 
     before = len(df)
-    df = df [df["category"] != ""]
-    print("Rows removed for missing or blank categorys:", before - len(df))
+    df = df[df["category"] != ""]
+    print("Rows removed for missing or blank categories:", before - len(df))
 
     before = len(df)
+    # Remove exact duplicate rows.
+    # Repeated request texts are removed before splitting in model_improvement.py.
     df = df.drop_duplicates()
     print("Exact duplicate rows removed:", before - len(df))
 
@@ -73,7 +75,7 @@ if __name__ == "__main__":
     print("\nAFTER CLEANING")
     inspect_data(clean_df)
 
-    Path(PROCESSED_PATH).parent.mkdir(parents=True,  exist_ok=True)
+    Path(PROCESSED_PATH).parent.mkdir(parents=True, exist_ok=True)
 
     clean_df.to_csv(PROCESSED_PATH, index=False)
 

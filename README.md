@@ -1,6 +1,6 @@
 # Council Service Request Classifier
 
-**Kai Morgan | BCIT601 - Assignment 2 | Iteration 3**
+**Kai Morgan | BCIT601 - Assignment 2 | Final Submission**
 
 ## Overview
 
@@ -48,7 +48,7 @@ python -m pip install -r requirements.txt
 
 The versions in `requirements.txt` match my development environment. The saved model and vectoriser were created using scikit-learn 1.9.0.
 
-### 2. Prepare the data and train the selected model
+### 2. Recreate the saved model (optional)
 
 The saved stop-word model pair is already included. To recreate it and the evaluation output, run:
 
@@ -108,7 +108,7 @@ The original Iteration 2 baseline scored 87.5% on a different 64/16 split. Eight
 | `/categories` | GET | `{"categories": ["road", "safety", "waste", "water"]}` |
 | `/predict` | POST | Original request text, predicted category and confidence score. |
 
-In `/docs`, expand **POST /predict**, select **Try it out**, enter the following JSON and select **Execute**:
+In `/docs`, expand **POST /predict** and select **Try it out**. Swagger fills in the example below. Select **Execute** to run it, or edit `request_text` to try another council request.
 
 ```json
 {
@@ -155,10 +155,4 @@ These tests check API behaviour. The model's 83.33% accuracy comes from the sepa
 
 Screenshots are stored in the **API Testing Evidence** folder supplied separately with the assessment, outside the code repository. They include prediction tests, endpoint tests, invalid-input tests and the model comparison.
 
-## Limitations and Responsible Use
-
-- The dataset is small and synthetic, so these results do not establish accuracy on real council requests.
-- The comparison uses one test split containing only 12 requests. The test results were inspected during development, so further independent evaluation is needed.
-- Some request types have limited training coverage. Both road requests about footpath damage landed in the test set, leaving no corresponding examples in the road training data.
-- Staff should review predictions, especially ambiguous requests or those with low confidence. Misclassification could delay the correct response.
-- Future use with real requests would need to protect personal information and consider Māori data sovereignty and responsible data use in Aotearoa New Zealand.
+The final Swagger example and its successful response are shown in `API Testing Evidence/Final Iteration/Swagger Example Prediction.png`.

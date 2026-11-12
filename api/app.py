@@ -5,7 +5,7 @@ import joblib
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-# Create the API application
+
 # Find the project folder
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,13 +27,19 @@ async def lifespan(app: FastAPI):
 
     # Clear the stored objects when the API stops
     artefacts.clear()
+    
 
 # Create the API application with startup and shutdown handling
 app = FastAPI(lifespan=lifespan)
 
 # Define the expected input for a prediction
 class PredictRequest(BaseModel):
-    request_text: str = Field(min_length=1, max_length=2000)
+    request_text: str = Field(
+        min_length=1,
+        max_length=2000,
+        description="Describe the council issue you want to report.",
+        examples=["Large pothole"],
+    )
 
 
 # Check that the API is running
@@ -60,7 +66,7 @@ def predict(request: PredictRequest):
             detail="request_text must not be blank."
         )
 
-        # Match the text cleaning used during training
+    # Match the text cleaning used during training
     cleaned_text = text.lower()
     cleaned_text = " ".join(cleaned_text.split())
 
