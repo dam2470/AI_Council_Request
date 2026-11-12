@@ -1,8 +1,13 @@
+"""Historical Iteration 2 baseline.
+
+This script uses the dataset before repeated request texts are removed.
+The final model comparison is in model_improvement.py.
+"""
 import pandas as pd
 import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn .linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 from pathlib import Path
 
@@ -16,7 +21,7 @@ ERRORS_PATH = "outputs/baseline_incorrect_predictions.csv"
 if __name__ == "__main__":
     #Load the clean dataset
     df = pd.read_csv(PROCESSED_PATH)
-    # Seperates the request text from the correct categorys
+    # Separates the request text from the correct categories
     x = df["request_text"]
     y = df["category"]
 
@@ -32,10 +37,10 @@ if __name__ == "__main__":
     print("Training requests:"  , len(x_train))
     print("Testing requests:", len(x_test))
 
-    print("\nTraining categorys:", y_train.value_counts(), sep="\n")
-    print("\nTesting categorys:", y_test.value_counts(), sep="\n")
+    print("\nTraining categories:", y_train.value_counts(), sep="\n")
+    print("\nTesting categories:", y_test.value_counts(), sep="\n")
 
-    # Coverts the requests text into numerics
+    # converts the requests text into numerics
     vectoriser = TfidfVectorizer()
     x_train_tfidf = vectoriser.fit_transform(x_train)
     x_test_tfidf = vectoriser.transform(x_test)
@@ -48,9 +53,9 @@ if __name__ == "__main__":
     model.fit(x_train_tfidf, y_train)
 
     print("\nBaseline model trained.")
-    print("Categorys:", model.classes_)
+    print("categories:", model.classes_)
 
-    # Predict categorys for test requests
+    # Predict categories for test requests
     y_pred = model.predict(x_test_tfidf)
 
     # Compare the predictions with the correct categories
@@ -68,7 +73,7 @@ if __name__ == "__main__":
 
     print("\nEvaluation report saved to:", REPORT_PATH)
 
-    # Combines the text requests , correct categorys and predictions
+    # Combines the text requests , correct categories and predictions
     results = pd.DataFrame({
         "request_text": x_test,
         "true_category": y_test,
@@ -97,7 +102,7 @@ if __name__ == "__main__":
         results["true_category"] !=  results["predicted_category"]
     ]
 
-    # Saves the incorrect predicts so they can be reviewed
+    # Saves the incorrect predictions so they can be reviewed
     mistakes.to_csv(ERRORS_PATH, index=False)
 
     print("\nIncorrect predictions:", len(mistakes))
